@@ -28,5 +28,10 @@
         "name": "Mohammed",
         "phone": "1234-5678",
         "employeeId": "E006"
+    },
+    {
+        "name": "Abdullah",
+        "phone": "1144-5533",
+        "employeeId": "E007"
     }
 ]
