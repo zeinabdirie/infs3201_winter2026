@@ -60,32 +60,6 @@ async function findShift(shiftId) {
     return undefined
 }
 
-/**
- * Find assignment.
- */
-async function findAssignment(empId, shiftId) {
-    const rawData = await fs.readFile('assignments.json')
-    const list = JSON.parse(rawData)
-
-    for (let i = 0; i < list.length; i++) {
-        if (list[i].employeeId === empId && list[i].shiftId === shiftId) {
-            return list[i]
-        }
-    }
-    return undefined
-}
-
-/**
- * Add assignment.
- */
-async function addAssignment(empId, shiftId) {
-    const rawData = await fs.readFile('assignments.json')
-    const list = JSON.parse(rawData)
-
-    list.push({ employeeId: empId, shiftId: shiftId })
-
-    await fs.writeFile('assignments.json', JSON.stringify(list, null, 4))
-}
 
 /**
  * Get shifts of an employee.
@@ -131,8 +105,6 @@ module.exports = {
     findEmployee,
     addEmployeeRecord,
     findShift,
-    findAssignment,
-    addAssignment,
     getEmployeeShifts,
     getConfig
 }
