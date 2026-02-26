@@ -23,7 +23,6 @@ async function getAllEmployees() {
 /**
  * Find employee by ID.
  * @param {string} empId
- * @returns {Promise<Object|undefined>}
  */
 async function findEmployee(empId) {
     const db = await connectDatabase()
