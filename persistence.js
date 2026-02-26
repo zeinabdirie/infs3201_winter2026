@@ -1,47 +1,45 @@
-const fs = require('fs/promises')
+const mongodb = require("mongodb")
+const fs = require("fs/promises")
+
+let client = undefined
+
+async function connectDatabase() {
+    if (!client) {
+        client = new mongodb.MongoClient("<MONGODB_URI>")
+        await client.connect()
+    }
+    return client.db("infs3201_winter2026")
+}
 
 /**
  * Load all employees.
  * @returns {Promise<Array>}
  */
 async function getAllEmployees() {
-    const rawData = await fs.readFile('employees.json')
-    return JSON.parse(rawData)
+    const db = await connectDatabase()
+    return db.collection("employees").find().toArray()
 }
 
 /**
  * Find employee by ID.
  * @param {string} empId
- * @returns {Promise<Object|undefined>}
  */
 async function findEmployee(empId) {
-    const list = await getAllEmployees()
-
-    for (let i = 0; i < list.length; i++) {
-        if (list[i].employeeId === empId) {
-            return list[i]
-        }
-    }
-    return undefined
+    const db = await connectDatabase()
+    return db.collection("employees").findOne({ employeeId: empId })
 }
 
 /**
- * Add new employee.
- * @param {{name:string, phone:string}} emp
+ * Update employee details.
+ * @param {string} empId
+ * @param {{name:string, phone:string}} data
  */
-async function addEmployeeRecord(emp) {
-    const list = await getAllEmployees()
-    let maxId = 0
-
-    for (let i = 0; i < list.length; i++) {
-        let eid = Number(list[i].employeeId.slice(1))
-        if (eid > maxId) maxId = eid
-    }
-
-    emp.employeeId = `E${String(maxId + 1).padStart(3, '0')}`
-    list.push(emp)
-
-    await fs.writeFile('employees.json', JSON.stringify(list, null, 4))
+async function updateEmployee(empId, data) {
+    const db = await connectDatabase()
+    await db.collection("employees").updateOne(
+        { employeeId: empId },
+        { $set: { name: data.name, phone: data.phone } }
+    )
 }
 
 /**
@@ -49,90 +47,44 @@ async function addEmployeeRecord(emp) {
  * @param {string} shiftId
  */
 async function findShift(shiftId) {
-    const rawData = await fs.readFile('shifts.json')
-    const list = JSON.parse(rawData)
-
-    for (let i = 0; i < list.length; i++) {
-        if (list[i].shiftId === shiftId) {
-            return list[i]
-        }
-    }
-    return undefined
-}
-
-/**
- * Find assignment.
- */
-async function findAssignment(empId, shiftId) {
-    const rawData = await fs.readFile('assignments.json')
-    const list = JSON.parse(rawData)
-
-    for (let i = 0; i < list.length; i++) {
-        if (list[i].employeeId === empId && list[i].shiftId === shiftId) {
-            return list[i]
-        }
-    }
-    return undefined
-}
-
-/**
- * Add assignment.
- */
-async function addAssignment(empId, shiftId) {
-    const rawData = await fs.readFile('assignments.json')
-    const list = JSON.parse(rawData)
-
-    list.push({ employeeId: empId, shiftId: shiftId })
-
-    await fs.writeFile('assignments.json', JSON.stringify(list, null, 4))
+    const db = await connectDatabase()
+    return db.collection("shifts").findOne({ shiftId: shiftId })
 }
 
 /**
  * Get shifts of an employee.
+ * @param {string} empId
  */
 async function getEmployeeShifts(empId) {
-    const rawAssign = await fs.readFile('assignments.json')
-    const assignments = JSON.parse(rawAssign)
+    const db = await connectDatabase()
+
+    const assignments = await db.collection("assignments").find({ employeeId: empId }).toArray()
 
     let shiftIds = []
-
     for (let i = 0; i < assignments.length; i++) {
-        if (assignments[i].employeeId === empId) {
-            shiftIds.push(assignments[i].shiftId)
-        }
+        shiftIds.push(assignments[i].shiftId)
     }
 
-    const rawShift = await fs.readFile('shifts.json')
-    const shifts = JSON.parse(rawShift)
-
-    let result = []
-
-    for (let i = 0; i < shifts.length; i++) {
-        for (let j = 0; j < shiftIds.length; j++) {
-            if (shifts[i].shiftId === shiftIds[j]) {
-                result.push(shifts[i])
-            }
-        }
+    if (shiftIds.length === 0) {
+        return []
     }
 
-    return result
+    return db.collection("shifts").find({ shiftId: { $in: shiftIds } }).toArray()
 }
 
 /**
- * Load config.
+ * Load config (from JSON file, not DB).
  */
 async function getConfig() {
-    const rawData = await fs.readFile('config.json')
-    return JSON.parse(rawData)
+    const raw = await fs.readFile("config.json")
+    return JSON.parse(raw)
 }
 
 module.exports = {
     getAllEmployees,
     findEmployee,
-    addEmployeeRecord,
+    updateEmployee,
     findShift,
-    findAssignment,
-    addAssignment,
     getEmployeeShifts,
     getConfig
 }

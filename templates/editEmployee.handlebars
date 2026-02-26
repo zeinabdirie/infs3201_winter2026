@@ -1,0 +1,7 @@
+<h1>Edit Employee: {{employee.name}}</h1>
+<form method="POST">
+  <input type="hidden" name="empId" value="{{employee.employeeId}}">
+  <label>Name: <input type="text" name="name" value="{{employee.name}}"></label><br>
+  <label>Phone: <input type="text" name="phone" value="{{employee.phone}}"></label><br>
+  <button type="submit">Save</button>
+</form>
