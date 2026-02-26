@@ -12,7 +12,7 @@ app.engine("handlebars", handleBars.engine())
 
 app.get("/", async (req, res) => {
     let allEmployees = await business.getAllEmployees()
-    res.render("landing", { employees: allEmployees })
+    res.render("landing", { employees: allEmployees, layout: undefined })
 })
 
 app.get("/employeeDetails", async (req, res) => {
@@ -24,8 +24,8 @@ app.get("/employeeDetails", async (req, res) => {
 
     for (let i = 0; i < shifts.length - 1; i++) {
         for (let j = i + 1; j < shifts.length; j++) {
-            const da = new Date(shifts[i].date + "T" + shifts[i].time)
-            const db = new Date(shifts[j].date + "T" + shifts[j].time)
+            const da = new Date(shifts[i].date + "T" + shifts[i].startTime)
+            const db = new Date(shifts[j].date + "T" + shifts[j].startTime)
             if (da > db) {
                 let temp = shifts[i]
                 shifts[i] = shifts[j]
@@ -35,18 +35,18 @@ app.get("/employeeDetails", async (req, res) => {
     }
 
     for (let i = 0; i < shifts.length; i++) {
-        let hour = parseInt(shifts[i].time.split(":")[0])
+        let hour = parseInt(shifts[i].startTime.split(":")[0])
         shifts[i].isMorning = hour < 12
     }
 
-    res.render("employeeDetails", { employee: employee, shifts: shifts })
+    res.render("employeeDetails", { employee: employee, shifts: shifts, layout: undefined })
 })
 
 app.get("/editEmployee", async (req, res) => {
     let empID = req.query.empId
     let employee = await business.findEmployee(empID)
     if (!employee) return res.send("Employee not found")
-    res.render("editEmployee", { employee: employee })
+    res.render("editEmployee", { employee: employee, layout: undefined })
 })
 
 app.post("/editEmployee", async (req, res) => {
@@ -56,12 +56,9 @@ app.post("/editEmployee", async (req, res) => {
 
     let phoneRegex = /^\d{4}-\d{4}$/
     if (!name) return res.send("Name cannot be empty")
-    if (!phoneRegex.test(phone)) {
-        return res.send("Phone must be 4 digits - 4 digits")
-    }
+    if (!phoneRegex.test(phone)) return res.send("Phone must be 4 digits - 4 digits")
 
     await business.updateEmployee(empID, { name: name, phone: phone })
-
     res.redirect("/")
 })
 

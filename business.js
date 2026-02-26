@@ -2,23 +2,15 @@ const persistence = require('./persistence')
 
 /**
  * Compute shift duration in hours.
- * 
- * LLM Used: ChatGPT
- * Prompt: "Write a JavaScript function computeShiftDuration(startTime, endTime)
- * that returns the number of hours (as a decimal) between times formatted HH:MM."
- * 
  * @param {string} startTime
  * @param {string} endTime
- * @returns {number}
+ * @returns {number} Duration in hours
  */
 function computeShiftDuration(startTime, endTime) {
-
     const startParts = startTime.split(':')
     const endParts = endTime.split(':')
-
     const startMinutes = Number(startParts[0]) * 60 + Number(startParts[1])
     const endMinutes = Number(endParts[0]) * 60 + Number(endParts[1])
-
     return (endMinutes - startMinutes) / 60
 }
 
@@ -31,15 +23,7 @@ async function getAllEmployees() {
 }
 
 /**
- * Add a new employee.
- * @param {{name:string, phone:string}} emp
- */
-async function addEmployeeRecord(emp) {
-    await persistence.addEmployeeRecord(emp)
-}
-
-/**
- * Get shifts for employee.
+ * Get shifts for an employee.
  * @param {string} empId
  * @returns {Promise<Array>}
  */
@@ -48,53 +32,27 @@ async function getEmployeeShifts(empId) {
 }
 
 /**
- * Assign shift with business rule validation.
+ * Find employee by ID.
  * @param {string} empId
- * @param {string} shiftId
- * @returns {Promise<string>}
+ * @returns {Promise<Object|undefined>}
  */
-async function assignShift(empId, shiftId) {
+async function findEmployee(empId) {
+    return await persistence.findEmployee(empId)
+}
 
-    const employee = await persistence.findEmployee(empId)
-    if (!employee) return "Employee does not exist"
-
-    const shift = await persistence.findShift(shiftId)
-    if (!shift) return "Shift does not exist"
-
-    const existing = await persistence.findAssignment(empId, shiftId)
-    if (existing) return "Employee already assigned to shift"
-
-    const shifts = await persistence.getEmployeeShifts(empId)
-    const config = await persistence.getConfig()
-
-    let totalHours = 0
-
-    for (let i = 0; i < shifts.length; i++) {
-        if (shifts[i].date === shift.date) {
-            totalHours += computeShiftDuration(
-                shifts[i].startTime,
-                shifts[i].endTime
-            )
-        }
-    }
-
-    const newHours = computeShiftDuration(
-        shift.startTime,
-        shift.endTime
-    )
-
-    if (totalHours + newHours > config.maxDailyHours) {
-        return "Daily hour limit exceeded"
-    }
-
-    await persistence.addAssignment(empId, shiftId)
-
-    return "Ok"
+/**
+ * Update employee details.
+ * @param {string} empId
+ * @param {{name:string, phone:string}} data
+ */
+async function updateEmployee(empId, data) {
+    await persistence.updateEmployee(empId, data)
 }
 
 module.exports = {
     getAllEmployees,
-    addEmployeeRecord,
     getEmployeeShifts,
-    assignShift
+    findEmployee,
+    updateEmployee,
+    computeShiftDuration
 }
