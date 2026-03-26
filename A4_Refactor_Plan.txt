@@ -1,0 +1,27 @@
+Collections Changing:
+- shifts: will include embedded employees array
+- employees: remove employeeId field
+- assignments: will be deleted
+
+Persistence Functions:
+- remove:
+  - getAssignments()
+  - createAssignment()
+- modify:
+  - getShifts() → include employees array
+  - assignEmployeeToShift() → update shift document instead
+
+Business Logic Changes:
+- assignment logic now updates shift.employees array
+- queries must use ObjectId instead of employeeId/shiftId
+
+Embedded Array Impact:
+- updates require $push and $pull
+- must avoid duplicate employee entries
+- removing employee requires updating multiple shifts
+
+Risks:
+- ObjectId conversion errors
+- broken references during migration
+- duplicate entries in employees array
+- forgetting to remove old assignment logic
