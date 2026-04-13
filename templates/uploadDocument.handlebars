@@ -1,0 +1,33 @@
+<h1>Upload Employee Document</h1>
+
+<p>Employee: {{employee.name}}</p>
+<p>Current Documents: {{fileCount}}/5</p>
+
+{{#if message}}<p style="color:red">{{message}}</p>{{/if}}
+
+{{#if canUpload}}
+    <form method="POST" action="/employee/{{employee._id}}/upload" enctype="multipart/form-data">
+        <label>Select PDF Document (max 2MB):</label><br>
+        <input type="file" name="document" accept=".pdf,application/pdf" required><br><br>
+        <button type="submit">Upload Document</button>
+    </form>
+{{else}}
+    <p style="color:red">Maximum documents (5) reached for this employee.</p>
+{{/if}}
+
+<h2>Uploaded Documents</h2>
+<ul>
+    {{#if files}}
+        {{#each files}}
+            <li>
+                {{this.originalName}} 
+                ({{this.size}} bytes, uploaded {{this.uploadedAt}})
+                <a href="/employee/{{this.employeeId}}/documents/{{this._id}}">Download</a>
+            </li>
+        {{/each}}
+    {{else}}
+        <p>No documents uploaded yet.</p>
+    {{/if}}
+</ul>
+
+<p><a href="/">Back to Home</a></p>

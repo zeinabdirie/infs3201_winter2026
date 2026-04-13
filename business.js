@@ -1,29 +1,6 @@
-const persistence = require('./persistence')
+const persistence = require("./persistence")
 
 /**
- * Compute shift duration in hours.
- * 
- * LLM Used: ChatGPT
- * Prompt: "Write a JavaScript function computeShiftDuration(startTime, endTime)
- * that returns the number of hours (as a decimal) between times formatted HH:MM."
- * 
- * @param {string} startTime
- * @param {string} endTime
- * @returns {number}
- */
-function computeShiftDuration(startTime, endTime) {
-
-    const startParts = startTime.split(':')
-    const endParts = endTime.split(':')
-
-    const startMinutes = Number(startParts[0]) * 60 + Number(startParts[1])
-    const endMinutes = Number(endParts[0]) * 60 + Number(endParts[1])
-
-    return (endMinutes - startMinutes) / 60
-}
-
-/**
- * Return all employees.
  * @returns {Promise<Array>}
  */
 async function getAllEmployees() {
@@ -31,15 +8,22 @@ async function getAllEmployees() {
 }
 
 /**
- * Add a new employee.
- * @param {{name:string, phone:string}} emp
+ * @param {string} empId
+ * @returns {Promise<Object|undefined>}
  */
-async function addEmployeeRecord(emp) {
-    await persistence.addEmployeeRecord(emp)
+async function findEmployee(empId) {
+    return await persistence.findEmployee(empId)
 }
 
 /**
- * Get shifts for employee.
+ * @param {string} empId
+ * @param {{name:string, phone:string}} data
+ */
+async function updateEmployee(empId, data) {
+    await persistence.updateEmployee(empId, data)
+}
+
+/**
  * @param {string} empId
  * @returns {Promise<Array>}
  */
@@ -48,53 +32,99 @@ async function getEmployeeShifts(empId) {
 }
 
 /**
- * Assign shift with business rule validation.
- * @param {string} empId
- * @param {string} shiftId
- * @returns {Promise<string>}
+ * @param {string} username
+ * @returns {Promise<Object|undefined>}
  */
-async function assignShift(empId, shiftId) {
+async function findUser(username) {
+    return await persistence.findUser(username)
+}
 
-    const employee = await persistence.findEmployee(empId)
-    if (!employee) return "Employee does not exist"
-
-    const shift = await persistence.findShift(shiftId)
-    if (!shift) return "Shift does not exist"
-
-    const existing = await persistence.findAssignment(empId, shiftId)
-    if (existing) return "Employee already assigned to shift"
-
-    const shifts = await persistence.getEmployeeShifts(empId)
-    const config = await persistence.getConfig()
-
-    let totalHours = 0
-
-    for (let i = 0; i < shifts.length; i++) {
-        if (shifts[i].date === shift.date) {
-            totalHours += computeShiftDuration(
-                shifts[i].startTime,
-                shifts[i].endTime
-            )
+/**
+ * Validates a file for upload
+ * Checks: MIME type, extension, and size
+ * 
+ * @param {string} mimeType - File MIME type
+ * @param {string} filename - Original filename
+ * @param {number} fileSizeBytes - File size in bytes
+ * @returns {Object} Validation result with isValid and error message
+ */
+function validateFileUpload(mimeType, filename, fileSizeBytes) {
+    const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+    
+    // Check MIME type
+    if (mimeType !== "application/pdf") {
+        return {
+            isValid: false,
+            error: "Only PDF files are allowed"
         }
     }
-
-    const newHours = computeShiftDuration(
-        shift.startTime,
-        shift.endTime
-    )
-
-    if (totalHours + newHours > config.maxDailyHours) {
-        return "Daily hour limit exceeded"
+    
+    // Check file extension
+    if (!filename.toLowerCase().endsWith(".pdf")) {
+        return {
+            isValid: false,
+            error: "File must have .pdf extension"
+        }
     }
+    
+    // Check file size
+    if (fileSizeBytes > MAX_FILE_SIZE) {
+        return {
+            isValid: false,
+            error: "File size exceeds 2MB limit"
+        }
+    }
+    
+    return { isValid: true }
+}
 
-    await persistence.addAssignment(empId, shiftId)
+/**
+ * Checks if user can upload more files to an employee
+ * Maximum of 5 documents per employee
+ * 
+ * @param {string} employeeId - Employee ID
+ * @returns {Promise<Object>} Result with canUpload boolean and current count
+ */
+async function checkUploadLimit(employeeId) {
+    const files = await persistence.getEmployeeFiles(employeeId)
+    return {
+        canUpload: files.length < 5,
+        currentCount: files.length,
+        maxCount: 5
+    }
+}
 
-    return "Ok"
+/**
+ * Processes and stores a file upload
+ * Creates metadata record in database and stores file
+ * 
+ * @param {Object} uploadParams
+ * @param {string} uploadParams.employeeId - Employee ID
+ * @param {string} uploadParams.username - Username of uploader
+ * @param {string} uploadParams.filename - Original filename
+ * @param {string} uploadParams.storagePath - Path where file is stored
+ * @param {number} uploadParams.fileSize - File size in bytes
+ * @param {string} uploadParams.mimeType - MIME type
+ * @returns {Promise<Object>} Stored file metadata with _id
+ */
+async function storeFileUpload(uploadParams) {
+    return await persistence.storeFileMetadata({
+        employeeId: uploadParams.employeeId,
+        username: uploadParams.username,
+        originalName: uploadParams.filename,
+        storagePath: uploadParams.storagePath,
+        size: uploadParams.fileSize,
+        mimeType: uploadParams.mimeType
+    })
 }
 
 module.exports = {
     getAllEmployees,
-    addEmployeeRecord,
+    findEmployee,
+    updateEmployee,
     getEmployeeShifts,
-    assignShift
+    findUser,
+    validateFileUpload,
+    checkUploadLimit,
+    storeFileUpload
 }

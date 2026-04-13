@@ -1,0 +1,7 @@
+<h1>Employees</h1>
+<p>{{user.username}} | <a href="/logout">Logout</a></p>
+<ul>
+{{#each employees}}
+<li><a href="/employeeDetails?empId={{_id}}">{{name}}</a></li>
+{{/each}}
+</ul>

@@ -1,0 +1,16 @@
+<h1>{{employee.name}}</h1>
+<p>{{employee.phone}}</p>
+
+
+<a href="/editEmployee?empId={{employee._id}}">Edit</a> | 
+<a href="/employee/{{employee._id}}/upload">Manage Documents</a>
+
+
+<table border="1">
+<tr><th>Date</th><th>Start</th><th>End</th></tr>
+{{#each shifts}}
+<tr><td>{{date}}</td><td>{{startTime}}</td><td>{{endTime}}</td></tr>
+{{/each}}
+</table>
+
+<p><a href="/">Back to Employees</a></p>

@@ -1,16 +1,19 @@
 {
   "name": "assignment1",
   "version": "1.0.0",
-  "description": "",
+  "description": "Employee Scheduling System with 2FA and Document Upload",
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "restaurant.js",
+  "main": "presentation.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node restaurant"
+    "start": "node presentation.js"
   },
   "dependencies": {
+    "express": "^5.2.1",
+    "express-handlebars": "^8.0.3",
+    "mongodb": "^7.1.0",
     "prompt-sync": "^4.2.0"
   }
 }
